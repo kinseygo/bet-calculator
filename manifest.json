@@ -1,0 +1,9 @@
+{
+  "name": "投注计算器 v12.3",
+  "short_name": "投注计算器",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#003366",
+  "icons": []
+}
