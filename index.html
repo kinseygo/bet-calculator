@@ -1,52 +1,32 @@
 <!DOCTYPE html>
 <html lang="zh">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>投注计算器 v13.4</title>
-<link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>投注计算器 v14.1</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="style.css">
+  <script src="app.js" defer></script>
 </head>
 <body>
-<header>
-  <div id="logo">🔴🔵 投注计算器 v13.4</div>
-</header>
-
-<main>
-  <section id="main-area">
-    <h2>主计算区（49 项）</h2>
-    <div id="inputs"></div>
-    <div class="buttons">
-      <button id="random">随机填值</button>
-      <button id="clear">清空</button>
-      <button id="restore">恢复</button>
-    </div>
-  </section>
-
-  <section id="adjust-area">
-    <h2>调节区（Top 20 最大数值）</h2>
-    倍数调整：<input type="number" id="multiplier" value="1" step="0.1">
-    <table id="adjust-table">
-      <thead><tr><th>编号</th><th>原值</th><th>调节值</th><th>新值</th></tr></thead>
-      <tbody></tbody>
-    </table>
-  </section>
-
-  <section id="ranking">
-    <h2>实时排列区</h2>
-    <div class="rank-columns">
-      <div>
-        <h3>原数值排序</h3>
-        <ol id="rank-original"></ol>
-      </div>
-      <div>
-        <h3>调节后排序</h3>
-        <ol id="rank-adjusted"></ol>
-      </div>
-    </div>
-    <div id="stats"></div>
-  </section>
-</main>
-
-<script src="script.js"></script>
+  <h1>投注计算器 v14.1</h1>
+  <div id="summary"></div>
+  <table id="mainTable"></table>
+  <h2>调节区（前20项）</h2>
+  <div id="adjustmentArea"></div>
+  <h2>实时排列区</h2>
+  <div id="sortOptions">
+    <button onclick="sortData('original')">按原值排序</button>
+    <button onclick="sortData('profit')">按盈亏排序</button>
+    <button onclick="sortData('adjusted')">按调节后排序</button>
+  </div>
+  <div id="sortedArea"></div>
+  <div class="controls">
+    <button onclick="saveData()">保存</button>
+    <button onclick="loadData()">导入</button>
+    <button onclick="clearAll()">恢复默认</button>
+    <button onclick="randomFill()">随机填充</button>
+    <button onclick="exportCSV()">导出 CSV</button>
+  </div>
 </body>
 </html>
