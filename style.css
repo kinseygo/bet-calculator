@@ -1,9 +1,0 @@
-body {font-family: Arial; background:#f7f9fc; color:#222; text-align:center; margin:20px;}
-h1 {color:#003366;}
-table {margin:auto; border-collapse: collapse;}
-td,th {border:1px solid #ccc; padding:6px 10px;}
-input[type='number'], input[type='text'] {width:80px;}
-#summary {margin-bottom:10px; font-weight:bold;}
-button {margin:4px; padding:6px 10px; border:none; border-radius:4px; background:#3366cc; color:white;}
-button:hover {background:#224c99;}
-.profit {color:blue;} .loss {color:red;} .even {color:black;}
