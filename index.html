@@ -1,32 +1,256 @@
 <!DOCTYPE html>
 <html lang="zh">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>投注计算器 v14.1</title>
-  <link rel="manifest" href="manifest.json">
-  <link rel="stylesheet" href="style.css">
-  <script src="app.js" defer></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>投注计算器 v15</title>
+<style>
+body {
+  font-family: "Segoe UI", "PingFang SC", sans-serif;
+  background: #f5f7fa;
+  color: #333;
+  margin: 0;
+  padding: 0;
+}
+header {
+  background: linear-gradient(to right, #0a74da, #b70000);
+  color: white;
+  padding: 10px;
+  text-align: center;
+  font-size: 22px;
+  font-weight: bold;
+}
+button {
+  margin: 4px;
+  padding: 6px 10px;
+  font-size: 14px;
+}
+#controls, #summary, #sortSection {
+  padding: 10px;
+  text-align: center;
+  background: #fff;
+  margin-bottom: 8px;
+  border-bottom: 1px solid #ccc;
+}
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 6px;
+  padding: 10px;
+}
+.cell {
+  background: #fff;
+  padding: 6px;
+  border-radius: 6px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  text-align: center;
+}
+.cell input {
+  width: 90%;
+  text-align: center;
+  font-size: 14px;
+  padding: 4px;
+}
+.result {
+  font-weight: bold;
+}
+.red { color: red; }
+.blue { color: blue; }
+.black { color: black; }
+#adjustSection, #rankSection {
+  padding: 10px;
+  background: #fff;
+  margin: 8px;
+  border-radius: 6px;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+th, td {
+  border: 1px solid #ccc;
+  padding: 4px;
+  text-align: center;
+}
+</style>
 </head>
 <body>
-  <h1>投注计算器 v14.1</h1>
-  <div id="summary"></div>
-  <table id="mainTable"></table>
-  <h2>调节区（前20项）</h2>
-  <div id="adjustmentArea"></div>
-  <h2>实时排列区</h2>
-  <div id="sortOptions">
-    <button onclick="sortData('original')">按原值排序</button>
-    <button onclick="sortData('profit')">按盈亏排序</button>
-    <button onclick="sortData('adjusted')">按调节后排序</button>
-  </div>
-  <div id="sortedArea"></div>
-  <div class="controls">
-    <button onclick="saveData()">保存</button>
-    <button onclick="loadData()">导入</button>
-    <button onclick="clearAll()">恢复默认</button>
-    <button onclick="randomFill()">随机填充</button>
-    <button onclick="exportCSV()">导出 CSV</button>
-  </div>
+<header>🎯 投注计算器 v15</header>
+
+<!-- 功能区 -->
+<div id="controls">
+  <button onclick="randomFill()">随机填值</button>
+  <button onclick="saveData()">保存</button>
+  <button onclick="importData()">导入</button>
+  <button onclick="exportData()">导出</button>
+  <button onclick="restore()">恢复</button>
+  倍数：
+  <select id="multiplier" onchange="calculateAll()">
+    ${[...Array(21)].map((_,i)=>40+i).map(v=>`<option value="${v}" ${v==45?"selected":""}>${v}</option>`).join('')}
+  </select>
+</div>
+
+<!-- 汇总区 -->
+<div id="summary">
+  <span id="sumAll">总和: 0</span> |
+  <span id="profitCount">盈: 0</span> |
+  <span id="lossCount">亏: 0</span> |
+  <span id="adjSum">调节总和: 0</span>
+</div>
+
+<!-- 主计算区 -->
+<div class="grid" id="mainGrid"></div>
+
+<!-- 调节区 -->
+<div id="adjustSection">
+  <h3>🔧 调节区（前20项）</h3>
+  <table id="adjustTable"><tr><th>编号</th><th>原值</th><th>调节值</th><th>调节后盈亏</th></tr></table>
+</div>
+
+<!-- 实时排列区 -->
+<div id="rankSection">
+  <h3>📈 实时排列区</h3>
+  排序方式：
+  <select id="sortType" onchange="updateRankTable()">
+    <option value="profit">按盈亏排列</option>
+    <option value="adjusted">按调节后排列</option>
+  </select>
+  <table id="rankTable"><tr><th>编号</th><th>原值</th><th>盈亏值</th><th>调节后值</th></tr></table>
+</div>
+
+<script>
+const grid = document.getElementById('mainGrid');
+let values = Array(49).fill(0);
+let adjustValues = Array(49).fill(0);
+
+function createGrid() {
+  grid.innerHTML = '';
+  for(let i=0;i<49;i++){
+    const div=document.createElement('div');
+    div.className='cell';
+    div.innerHTML=`
+      <div><strong>${(i+1).toString().padStart(2,'0')}</strong></div>
+      <input id="input${i}" placeholder="输入数值或算式" oninput="calculateAll()">
+      <div id="calc${i}" class="result">0</div>
+    `;
+    grid.appendChild(div);
+  }
+}
+createGrid();
+
+function calculateAll(){
+  for(let i=0;i<49;i++){
+    const val = document.getElementById('input'+i).value;
+    let num=0;
+    try{ num = eval(val)||0; }catch(e){ num=0; }
+    values[i]=num;
+    document.getElementById('calc'+i).innerText=num;
+  }
+  const sumAll = values.reduce((a,b)=>a+b,0);
+  document.getElementById('sumAll').innerText="总和: "+sumAll.toFixed(2);
+
+  const mult = Number(document.getElementById('multiplier').value);
+  let profitCount=0,lossCount=0;
+  for(let i=0;i<49;i++){
+    const diff=sumAll-(values[i]*mult);
+    const res=document.getElementById('calc'+i);
+    res.innerText += " ("+(diff>0?"盈":"亏")+")";
+    res.className='result '+(diff>0?'blue':diff<0?'red':'black');
+    if(diff>0) profitCount++; else if(diff<0) lossCount++;
+  }
+  document.getElementById('profitCount').innerText="盈: "+profitCount;
+  document.getElementById('lossCount').innerText="亏: "+lossCount;
+  updateAdjust();
+  updateRankTable();
+}
+
+function randomFill(){
+  for(let i=0;i<49;i++){
+    document.getElementById('input'+i).value=Math.floor(Math.random()*1000)+1;
+  }
+  calculateAll();
+}
+
+function updateAdjust(){
+  const sortedIdx = values.map((v,i)=>[v,i]).sort((a,b)=>b[0]-a[0]).slice(0,20);
+  const table=document.getElementById('adjustTable');
+  table.innerHTML='<tr><th>编号</th><th>原值</th><th>调节值</th><th>调节后盈亏</th></tr>';
+  const sumAll = values.reduce((a,b)=>a+b,0);
+  const mult = Number(document.getElementById('multiplier').value);
+  let adjSum=0;
+  sortedIdx.forEach(([v,i])=>{
+    const diff=sumAll-((v-adjustValues[i])*mult);
+    adjSum+=v-adjustValues[i];
+    table.innerHTML+=`
+      <tr>
+        <td>${(i+1).toString().padStart(2,'0')}</td>
+        <td>${v}</td>
+        <td><input type="number" value="${adjustValues[i]}" oninput="adjustValues[${i}]=Number(this.value);calculateAll()"></td>
+        <td style="color:${diff>0?'blue':diff<0?'red':'black'}">${diff.toFixed(2)}</td>
+      </tr>`;
+  });
+  document.getElementById('adjSum').innerText="调节总和: "+adjSum.toFixed(2);
+}
+
+function updateRankTable(){
+  const type=document.getElementById('sortType').value;
+  const sumAll=values.reduce((a,b)=>a+b,0);
+  const mult=Number(document.getElementById('multiplier').value);
+  const arr=values.map((v,i)=>{
+    const adj=v-adjustValues[i];
+    const diff=sumAll-(adj*mult);
+    return {id:i+1,val:v,adj,diff};
+  });
+  arr.sort((a,b)=>type==='profit'?b.diff-a.diff:b.adj-a.adj);
+  const table=document.getElementById('rankTable');
+  table.innerHTML='<tr><th>编号</th><th>原值</th><th>盈亏值</th><th>调节后值</th></tr>';
+  arr.forEach(o=>{
+    table.innerHTML+=`
+      <tr>
+        <td>${o.id.toString().padStart(2,'0')}</td>
+        <td>${o.val}</td>
+        <td style="color:${o.diff>0?'blue':o.diff<0?'red':'black'}">${o.diff.toFixed(2)}</td>
+        <td>${o.adj}</td>
+      </tr>`;
+  });
+}
+
+function saveData(){
+  localStorage.setItem('betCalcData',JSON.stringify({values,adjustValues}));
+  alert('✅ 数据已保存');
+}
+function restore(){
+  localStorage.removeItem('betCalcData');
+  location.reload();
+}
+function importData(){
+  const txt=prompt('请粘贴导入的数据：');
+  try{
+    const obj=JSON.parse(txt);
+    values=obj.values;adjustValues=obj.adjustValues;
+    values.forEach((v,i)=>document.getElementById('input'+i).value=v);
+    calculateAll();
+    alert('✅ 导入成功');
+  }catch(e){alert('导入失败');}
+}
+function exportData(){
+  const data=JSON.stringify({values,adjustValues});
+  const blob=new Blob([data],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;a.download='bet-calculator-data.json';
+  a.click();
+}
+window.onload=()=>{
+  const saved=localStorage.getItem('betCalcData');
+  if(saved){
+    const obj=JSON.parse(saved);
+    values=obj.values||values;
+    adjustValues=obj.adjustValues||adjustValues;
+    values.forEach((v,i)=>document.getElementById('input'+i).value=v);
+  }
+  calculateAll();
+};
+</script>
 </body>
 </html>
