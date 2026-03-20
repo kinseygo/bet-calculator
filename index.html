@@ -120,7 +120,7 @@ async function init(){
   let list = [];
 
   try{
-    const res = await fetch('https://ls.kjkj.fit');
+    const res = await fetch('https://api.allorigins.win/raw?url=https://ls.kjkj.fit');
     const data = await res.json();
 
     list = data.slice(0,200).map(item=>{
