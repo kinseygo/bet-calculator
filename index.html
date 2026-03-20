@@ -2,7 +2,7 @@
 <html lang="zh">
 <head>
 <meta charset="UTF-8">
-<title>49数智能分析系统 V9</title>
+<title>49数智能分析系统 V9 稳定版</title>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
@@ -16,7 +16,7 @@ canvas { max-width: 100%; margin-top: 20px; background:#fff;}
 
 <body>
 
-<h2>🔥 49数智能分析系统 V9</h2>
+<h2>🔥 49数智能分析系统 V9（稳定版）</h2>
 
 <button onclick="init()">一键分析</button>
 
@@ -26,7 +26,7 @@ canvas { max-width: 100%; margin-top: 20px; background:#fff;}
 
 <script>
 
-// ====== 波色 ======
+// ===== 波色 =====
 const colorMap = {
   红: [1,2,7,8,12,13,18,19,23,24,29,30,34,35,40,45,46],
   蓝: [3,4,9,10,14,15,20,25,26,31,36,37,41,42,47,48],
@@ -39,7 +39,7 @@ function getColor(num){
   }
 }
 
-// ====== 连续 ======
+// ===== 连续 =====
 function getLastStreak(list, fn){
   const first = fn(list[0]);
   let count=0;
@@ -50,7 +50,7 @@ function getLastStreak(list, fn){
   return count;
 }
 
-// ====== 预测 ======
+// ===== 预测 =====
 function predict(list){
   let score = {};
   for(let i=1;i<=49;i++) score[i]=0;
@@ -82,10 +82,10 @@ function predict(list){
     .slice(0,5);
 }
 
-// ====== 命中率 ======
+// ===== 命中率 =====
 function calcAccuracy(list){
   let hit = 0;
-  let total = 30;
+  let total = 20;
 
   for(let i=0;i<total;i++){
     const sub = list.slice(i+1);
@@ -97,7 +97,7 @@ function calcAccuracy(list){
   return (hit/total*100).toFixed(2);
 }
 
-// ====== 图表 ======
+// ===== 图表 =====
 function drawChart(list){
   const last50 = list.slice(0,50).reverse();
   const data = last50.map(n=> n%2===0 ? 1 : 0);
@@ -114,14 +114,33 @@ function drawChart(list){
   });
 }
 
-// ====== 主逻辑 ======
+// ===== 获取数据（带3重保险）=====
+async function fetchData(){
+
+  const urls = [
+    "https://api.allorigins.win/raw?url=https://ls.kjkj.fit",
+    "https://corsproxy.io/?https://ls.kjkj.fit",
+    "https://thingproxy.freeboard.io/fetch/https://ls.kjkj.fit"
+  ];
+
+  for(let url of urls){
+    try{
+      const res = await fetch(url);
+      const data = await res.json();
+      if(data && data.length) return data;
+    }catch(e){}
+  }
+
+  throw new Error("全部接口失败");
+}
+
+// ===== 主逻辑 =====
 async function init(){
 
   let list = [];
 
   try{
-    const res = await fetch('https://api.allorigins.win/raw?url=https://ls.kjkj.fit');
-    const data = await res.json();
+    const data = await fetchData();
 
     list = data.slice(0,200).map(item=>{
       const nums = item.numbers.split(',');
@@ -129,7 +148,7 @@ async function init(){
     });
 
   }catch(e){
-    document.getElementById('output').innerText = "❌ 数据接口失败（可能被拦截）";
+    document.getElementById('output').innerText = "❌ 接口全部失败（被墙或失效）";
     return;
   }
 
